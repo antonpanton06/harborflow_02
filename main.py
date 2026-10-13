@@ -43,10 +43,10 @@ def list_registered_vessels():
      
     vessels, skipped_files = load_vessels("dataset/vessels")
     
-    print("Registered HarborFlow vessels:")
+    print("\nRegistered HarborFlow vessels:")
     for vessel in vessels:
-        print(f"- {vessel['name'].upper()} | IMO {vessel['imo']} | {vessel['capacity_teu']} TEU")
-    print(f"Skipped vessel files: {skipped_files}")
+        print(f"- {vessel['name']} | IMO {vessel['imo']} | {vessel['capacity_teu']} TEU")
+    print(f"Skipped vessel files: {skipped_files}\n")
 
 
 if __name__ == "__main__":
