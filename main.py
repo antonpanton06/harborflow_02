@@ -1,8 +1,10 @@
 """HarborFlow Assignment 2 starter entry point."""
 
 
-from data_access import load_vessels
+from data_access import load_vessels, load_csv
 from datetime import datetime
+import csv
+from operations import find_upcoming_call
 
 def main():
     """Run the HarborFlow Port Intelligence Console."""
@@ -51,7 +53,7 @@ def list_registered_vessels():
         for vessel in vessels:
             print(f"- {vessel['name']} | IMO {vessel['imo']} | {vessel['capacity_teu']:,} TEU")
         print(f"Skipped vessel files: {skipped_files}\n")
-        
+
     except FileNotFoundError as error:
         print(error)
         return
@@ -75,7 +77,7 @@ def inspect_vessel_manifest():
             selected_vessel = vessel
 
     if selected_vessel == None:
-        print(f"Vessel: {vessel} not found.") # If there is no vessels to be found or wrong input
+        print(f"Vessel not found.") # If there is no vessel that match to be found.
         return
 
     reference_date = None
@@ -90,11 +92,32 @@ def inspect_vessel_manifest():
 
             reference_date = parsed_date
         except ValueError:
-            print("Error - Date must use YYYY-MM-DD.")
+            print("Error - Date must use YYYY-MM-DD.") # Prints if a ValueError uccurs.
+
+    try:
+        port_calls = load_csv("dataset/port_calls.csv") # Calls for the function with "dataset/port_calls.csv" as the path.
+    except FileNotFoundError:
+        print("Port calls file can't be found.") # Prints if file can't be found
+        return # Returns so that user gets sent back to main.
+    except csv.Error:
+        print("Port calls file could not be read.") # Prints if the file is found but can't be read.
+        return # Returns so that user gets sent back to main.
+
+    selected_call = find_upcoming_call(port_calls, selected_vessel["vessel_id"], reference_date)
+
+    if selected_call == None:
+        print("No upcoming port calls found.")
+        return
+
+    arrival_date = datetime.strptime(selected_call["arrival_date"], "%Y-%m-%d").date()
+    formated_date = arrival_date.strftime("%d %B %Y")
+
 
 
     print(f"\nVessel name: {selected_vessel["name"]}")
-    print(f"Manifest for {selected_vessel["name"]} | Call {selected_vessel["call_id"]} | {reference_date}")
+    print(f"Manifest for {selected_vessel["name"]} | Call {selected_call["call_id"]} | {formated_date}")
+
+    
     print()
 
 

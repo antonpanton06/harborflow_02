@@ -5,12 +5,20 @@ Create reusable JSON and CSV loaders here. Do not hard-code sample records.
 
 from json import load, JSONDecodeError
 from pathlib import Path
+import csv
 
 def load_json(path):
     """Load a JSON file from the given path."""
     with open(path, "r", encoding="utf-8") as file:
         data = load(file)
     return data
+
+def load_csv(path):
+    """Load CSV rows as a list of dictionaries."""
+    with open(path, "r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
+        rows = list(reader)
+    return rows
 
 def load_vessels(directory):
     """Load vessel data from the given directory."""
