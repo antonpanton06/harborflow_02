@@ -1,10 +1,14 @@
 """HarborFlow Assignment 2 starter entry point."""
 
 
-from data_access import load_vessels, load_csv
+from data_access import load_vessels, load_csv, load_shipments, find_manifest, load_vessel_names, write_csv
 from datetime import datetime
 import csv
-from operations import find_upcoming_call
+from operations import (find_upcoming_call, classify_manifest, CATEGORY_ORDER,
+                        build_customer_profile, upsert_profile, PROFILE_HEADER,
+                        find_calls_by_month)
+
+CUSTOMER_PROFILES_PATH = "exports/customer-profiles.csv"
 
 def main():
     """Run the HarborFlow Port Intelligence Console."""
@@ -34,7 +38,16 @@ def main():
 
         elif option == 2:
             inspect_vessel_manifest()
-        
+
+        elif option == 3:
+            identify_priority_cargo()
+
+        elif option == 4:
+            export_customer_profile()
+
+        elif option == 5:
+            find_port_calls_by_month()
+
         elif option == 10:
             print("Console closed. HarborFlow operational data remains safe.")
             run =False
@@ -119,6 +132,101 @@ def inspect_vessel_manifest():
 
     
     print()
+
+
+#Option 3:
+def identify_priority_cargo():
+    """Classify every resolved shipment of one port call."""
+    call_id = input("Call ID: ").strip()
+
+    try:
+        port_calls = load_csv("dataset/port_calls.csv")
+    except FileNotFoundError:
+        print("Port calls file can't be found.")
+        return
+    except csv.Error:
+        print("Port calls file could not be read.")
+        return
+
+    known_call_ids = [call["call_id"].casefold() for call in port_calls]
+    if call_id.casefold() not in known_call_ids:
+        print("Port call not found.")
+        return
+
+    manifest = find_manifest("dataset/manifests", call_id)
+    if manifest is None:
+        print("Manifest unavailable.")
+        return
+
+    shipments, _ = load_shipments("dataset/shipments")
+    lines, totals = classify_manifest(manifest, shipments)
+
+    for shipment_id, category, reason in lines:
+        print(f"{shipment_id} | {category} | {reason}")
+    summary = ", ".join(f"{category}={totals[category]}" for category in CATEGORY_ORDER)
+    print(f"Category totals: {summary}")
+
+
+#Option 4:
+def export_customer_profile():
+    """Create or update one customer's row in exports/customer-profiles.csv."""
+    customer_name = input("Customer name: ").strip()
+
+    shipments, _ = load_shipments("dataset/shipments")
+    profile = build_customer_profile(customer_name, shipments)
+    if profile is None:
+        print("Customer not found.") # The export file is not created or modified
+        return
+
+    try:
+        rows = load_csv(CUSTOMER_PROFILES_PATH) # Existing rows kept in memory
+    except FileNotFoundError:
+        rows = [] # First run: the file is created below
+    except csv.Error:
+        print("Customer profile export could not be read.")
+        return
+
+    rows = upsert_profile(rows, profile)
+    write_csv(CUSTOMER_PROFILES_PATH, PROFILE_HEADER, rows)
+    print(f"Customer profile updated: {CUSTOMER_PROFILES_PATH}")
+
+
+#Option 5:
+def find_port_calls_by_month():
+    """List all port calls in one month, sorted by date and vessel name."""
+    month = None
+    while month is None: # Repeat only the month prompt
+        try:
+            value = int(input("Month (1-12): "))
+            if not 1 <= value <= 12:
+                raise ValueError
+            month = value
+        except ValueError:
+            print("Error - Enter a month from 1 to 12.")
+
+    try:
+        port_calls = load_csv("dataset/port_calls.csv")
+    except FileNotFoundError:
+        print("Port calls file can't be found.")
+        return
+    except csv.Error:
+        print("Port calls file could not be read.")
+        return
+
+    vessel_names = load_vessel_names("dataset/vessels")
+    calls, problems = find_calls_by_month(port_calls, vessel_names, month)
+
+    for problem in problems:
+        print(problem)
+
+    if not calls:
+        print("No port calls found.")
+        return
+
+    month_name = datetime(2000, month, 1).strftime("%B")
+    print(f"Port calls in {month_name}:")
+    for arrival_date, vessel_name, port_code, call_id in calls:
+        print(f"- {arrival_date.strftime('%d %B %Y')} | {vessel_name} | {port_code} | {call_id}")
 
 
 if __name__ == "__main__":
