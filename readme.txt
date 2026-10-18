@@ -7,8 +7,12 @@ Python version tested:
 
 Team members and concrete contributions
 ---------------------------------------
-Name:
-Contribution:
+Name: Vladyslav Pryshchep
+Contribution: - Implementation: Task 3 (priority cargo), Task 4 (customer profile CSV
+  export), Task 5 (port calls by month). Menu options 3-5 in main.py; related
+  functions in operations.py and data_access.py.
+- Testing: 12 test-ledger rows for Tasks 3-5.
+- Integration: added Tasks 3-5 to the shared main.py menu.
 
 Name:
 Contribution:
