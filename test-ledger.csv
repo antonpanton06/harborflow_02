@@ -1,11 +1,21 @@
 area,test_case,input_summary,expected_result,actual_result,owner,status
 Files,Mixed valid and invalid vessels,List vessels,Valid vessels shown and malformed file skipped,,,Not run
 Relationships,Missing shipment,Inspect Nordic Relay from 2026-10-18,Missing record counted without crash,,,Not run
-Export,Update existing customer,Export same customer twice,One replaced row and no duplicate,,,Not run
-Month,Invalid source date,Choose month 10,Bad source row skipped and valid calls shown,,,Not run
+Export,Update existing customer,Export same customer twice,One replaced row and no duplicate,Norra MedTech AB row replaced in place; file still has one row per customer,Vlad,Pass
+Month,Invalid source date,Choose month 10,Bad source row skipped and valid calls shown,HFL-BAD-9999 reported and skipped; 3 October calls listed in order,Vlad,Pass
 Regex,Several identifiers,Sanitize Reefer temperature deviation,All three identifier types replaced,,,Not run
 Sequence,Repeated event,Analyze HFL-GOT-2048,Longest first stable window reported,,,Not run
 Weather,Combined thresholds,Nordic Relay from 2026-10-18,Wind and wave recommendations combined,,,Not run
 Weather,Missing forecast,Baltic Pioneer from 2026-11-05,Forecast unavailable without stopping,,,Not run
 Search,Two query words,Search reefer delay,Positive matches scored and sorted,,,Not run
 Cache,Corrupt cache,Replace cache with invalid JSON then search,Cache rebuilt,,,Not run
+Relationships,Known call ID,Option 3: HFL-AAR-2071,"SHP-1045 EXPEDITE, SHP-1046 CONTROLLED, SHP-1067 EXPEDITE; totals 1/0/2/0",Matches expected,Vlad,Pass
+Relationships,Missing linked shipment,Option 3: HFL-GOT-2048,SHP-1042 COLD CHAIN; missing SHP-1051 not classified; no crash,Matches expected,Vlad,Pass
+Export,First write,Option 4: Norra MedTech AB with no export file,"File created with header once and row Norra MedTech AB,8,6420.50,3,CPH|GOT|OSL",Matches expected,Vlad,Pass
+Export,Second customer,Option 4: '  vänern tools ab ',"Row Vänern Tools AB,2,5870.00,1,AAR|OSL appended; first row unchanged",Matches expected,Vlad,Pass
+Export,Reload generated CSV,Load exports/customer-profiles.csv with csv.DictReader after 3 exports,Valid CSV with 3 rows and correct header,Matches expected,Vlad,Pass
+Relationships,Unknown customer,Option 4: Nobody AB (with and without existing file),Customer not found.; export file not created or modified,Matches expected,Vlad,Pass
+Files,Malformed shipment JSON and missing weight,Temp copy: broken shipment file + shipment without weight_kg; Option 4 Norra MedTech AB,Invalid shipment files skipped; profile built from valid records only,Matches expected,Vlad,Pass
+Month,Invalid month input,"Option 5: abc, 0, 13, then 2",Error - Enter a month from 1 to 12. printed 3 times; only month prompt repeated,Matches expected,Vlad,Pass
+Month,Unknown vessel_id in port_calls.csv,Temp copy: added row with VSL-777; Option 5: 10,Row reported and skipped; valid October calls still listed,Matches expected,Vlad,Pass
+Files,Missing port_calls.csv,Temp copy without port_calls.csv; Options 5 and 3,Error message and return to menu without crash,Port calls file can't be found.,Vlad,Pass
