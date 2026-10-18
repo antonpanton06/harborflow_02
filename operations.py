@@ -22,11 +22,11 @@ def find_upcoming_call(port_calls, vessel_id, reference_date):
         if arrival_date >= reference_date:
             upcoming_calls.append(call)
 
-        if not upcoming_calls:
-            return None
+    if not upcoming_calls:
+        return None
 
-        upcoming_calls.sort(key=lambda call: (call["arrival_date"], call["call_id"]))
-        return upcoming_calls [0]
+    upcoming_calls.sort(key=lambda call: (call["arrival_date"], call["call_id"]))
+    return upcoming_calls [0]
 
 # ---------- Task 3: priority cargo ----------
 

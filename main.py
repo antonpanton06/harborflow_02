@@ -135,13 +135,37 @@ def inspect_vessel_manifest():
 
     arrival_date = datetime.strptime(selected_call["arrival_date"], "%Y-%m-%d").date()
     formated_date = arrival_date.strftime("%d %B %Y")
-
-
-
-    print(f"\nVessel name: {selected_vessel["name"]}")
-    print(f"Manifest for {selected_vessel["name"]} | Call {selected_call["call_id"]} | {formated_date}")
-
     
+    print(f"\nManifest for {selected_vessel["name"]} | Call {selected_call["call_id"]} | {formated_date}")
+
+    manifest = find_manifest("dataset/manifests", selected_call["call_id"])
+
+    if manifest is None:
+        print("Manifest unavailable.")
+        return # If no manifest matches the selected call["call_id"]
+
+    shipments, skipped_files = load_shipments("dataset/shipments") # "dataset/shipments" is the directory we're searching for.
+
+    # Start values that gets updated as the program goes through the manifest
+    resolved_weight = 0.0
+    missing_records = 0 
+    
+    for number, shipment_id in enumerate(manifest["shipment_ids"], start=1):
+        shipment = shipments.get(shipment_id)
+
+        if shipment == None:
+            print(f"{number}. {shipment_id} | MISSING RECORD") # If the shipment and the shipment_id has no match then add a missing record and continue.
+            missing_records += 1 
+            continue
+
+        cargo_type = shipment.get("cargo_type", "NOT PROVIDED") # Finds the cargo type for the shipment
+        resolved_weight += shipment["weight_kg"] # Calculates the resolved weight
+
+        print(f"{number}. {shipment_id} | {shipment['customer']} | "f"{shipment['weight_kg']} kg | {cargo_type}")
+
+    print(f"Declared shipments: {len(manifest['shipment_ids'])}") # len() calculates the no. of matching shipments_ids
+    print(f"Resolved weight: {resolved_weight:.2f} kg") # Prints the resolved weight with two decimals
+    print(f"Missing shipment records: {missing_records}") # Prints exact amount of missing records the program detects
     print()
 
 
@@ -172,10 +196,12 @@ def identify_priority_cargo():
     shipments, _ = load_shipments("dataset/shipments")
     lines, totals = classify_manifest(manifest, shipments)
 
+    print()
     for shipment_id, category, reason in lines:
         print(f"{shipment_id} | {category} | {reason}")
     summary = ", ".join(f"{category}={totals[category]}" for category in CATEGORY_ORDER)
     print(f"Category totals: {summary}")
+    print()
 
 
 #Option 4:
