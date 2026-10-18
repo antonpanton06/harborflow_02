@@ -1,12 +1,14 @@
 """HarborFlow Assignment 2 starter entry point."""
 
 
-from data_access import load_vessels, load_csv, load_shipments, find_manifest, load_vessel_names, write_csv
+from data_access import load_vessels, load_csv, load_shipments, find_manifest, load_vessel_names, write_csv, load_records
 from datetime import datetime
+from pathlib import Path
 import csv
 from operations import (find_upcoming_call, classify_manifest, CATEGORY_ORDER,
                         build_customer_profile, upsert_profile, PROFILE_HEADER,
-                        find_calls_by_month)
+                        find_calls_by_month, build_weather_lookup)
+from text_tools import sanitize_report, longest_stable_sequence
 
 CUSTOMER_PROFILES_PATH = "exports/customer-profiles.csv"
 
@@ -47,6 +49,15 @@ def main():
 
         elif option == 5:
             find_port_calls_by_month()
+
+        elif option == 6:
+            Sanitize_an_incident_report()
+
+        elif option == 7:
+            Analyze_the_longest_stable_event_sequence()
+
+        elif option == 8:
+            Assess_weather_risk_for_upcoming_calls()
 
         elif option == 10:
             print("Console closed. HarborFlow operational data remains safe.")
@@ -228,6 +239,82 @@ def find_port_calls_by_month():
     for arrival_date, vessel_name, port_code, call_id in calls:
         print(f"- {arrival_date.strftime('%d %B %Y')} | {vessel_name} | {port_code} | {call_id}")
 
+#Option 6:
+def Sanitize_an_incident_report():
+    directory = "dataset/incidents"
+    required_fields = ("incident_id", "call_id", "title", "report")
+    incidents,_ = load_records(directory, required_fields)
+    incidents.sort(key=lambda incident: incident["title"].casefold())
 
+    for count, incident in enumerate(incidents,start=1):                # List all possible incident reports
+            print(f"{count}. {incident["title"]}")
+    
+    incident_choice = None
+    while incident_choice is None:
+        try:
+            choice = int(input(f"Incident number(1-{count}):"))
+            if choice < 0 or choice > count:
+                raise ValueError
+            incident_choice = incidents[choice - 1]
+        except ValueError:
+            print(f"Error - Select a listed incident")
+    
+    sanitized_text = sanitize_report(incident_choice["report"])
+    if sanitized_text == incident_choice["report"]:
+        print("Incident contains no share-sensitive identifiers.")
+        return
+    
+    output_path = Path("exports/sanitized") / f"{incident_choice["incident_id"]}-sanitized.txt"  # Create the file path for the incident report
+    output_path.parent.mkdir(parents=True, exist_ok=True)                                       # Makes the parent folders if they do not exist
+    with open(output_path, "w", encoding="utf-8", newline="") as file:                          # writes to the file
+        file.write(sanitized_text)
+
+#Option 7:
+def Analyze_the_longest_stable_event_sequence():
+    call_id = input("Call ID: ").strip()
+    manifest = find_manifest("dataset/manifests", call_id)
+    if manifest is None:
+        print("Manifest unavailable.")
+        return
+
+    length, sequence = longest_stable_sequence(manifest["event_codes"])                         # Return length of sequence and the sequence itself
+    print(f"Event codes: {','.join(manifest['event_codes'])}")                                  # Print string listing event codes
+    print(f"Longest stable sequence length: {length}")                                          # Length of longest sequence
+    print(f"Sequence: {' -> '.join(sequence)}")                                                 # Longest sequence 
+
+def Assess_weather_risk_for_upcoming_calls():
+    port_calls = load_csv("dataset/port_calls.csv")
+    weather_rows = load_csv("dataset/weather.csv")
+    vessels,_ = load_vessels("dataset/vessels")
+
+    vessel_name = input("Vessel name: ").strip().casefold()    
+    selected_vessel = None
+    for vessel in vessels:
+        if vessel["name"].casefold() == vessel_name:
+            selected_vessel = vessel
+
+    if selected_vessel == None:
+        print(f"Vessel not found.") # If there is no vessel that match to be found.
+        return
+    
+    reference_date = None
+    while reference_date is None:
+        date_text = input(("Reference date (YYYY-MM-DD): "))
+        try:
+            parsed_date = datetime.strptime(date_text, "%Y-%m-%d").date()
+
+            if parsed_date.isoformat() != date_text:
+                raise ValueError
+
+            reference_date = parsed_date
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD.") # Prints if a ValueError uccurs.
+    
+    print(vessel)
+
+    for count, vessel in enumerate(vessels, start=1):
+        pass
+    print(build_weather_lookup(weather_rows))
+    # print(find_upcoming_call(port_calls))
 if __name__ == "__main__":
     main()

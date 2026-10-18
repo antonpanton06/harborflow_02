@@ -152,3 +152,11 @@ def find_calls_by_month(port_calls, vessel_names, month):
 
     calls.sort(key=lambda call: (call[0], call[1].casefold()))
     return calls, problems
+
+def build_weather_lookup(weather_rows):
+    """Return {(port_code, date_text): row}. The first row wins on duplicates."""
+    lookup = {}
+    for row in weather_rows:
+        key = (row["port_code"].strip(), row["date"].strip())
+        lookup.setdefault(key, row)
+    return lookup
