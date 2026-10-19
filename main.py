@@ -311,6 +311,7 @@ def Assess_weather_risk_for_upcoming_calls():
     weather_rows = load_csv("dataset/weather.csv")
     vessels,_ = load_vessels("dataset/vessels")
 
+    print() # Console spacing
     vessel_name = input("Vessel name: ").strip().casefold()    
     selected_vessel = None
     for vessel in vessels:
@@ -321,24 +322,12 @@ def Assess_weather_risk_for_upcoming_calls():
         print(f"Vessel not found.") # If there is no vessel that match to be found.
         return
     
-    reference_date = None
-    while reference_date is None:
-        date_text = input(("Reference date (YYYY-MM-DD): "))
-        try:
-            parsed_date = datetime.strptime(date_text, "%Y-%m-%d").date()
-
-            if parsed_date.isoformat() != date_text:
-                raise ValueError
-
-            reference_date = parsed_date
-        except ValueError:
-            print("Error - Date must use YYYY-MM-DD.") # Prints if a ValueError uccurs.
     
-    print(vessel)
+    print() # Console spacing
 
-    for count, vessel in enumerate(vessels, start=1):
-        pass
-    print(build_weather_lookup(weather_rows))
-    # print(find_upcoming_call(port_calls))
+    print(selected_vessel)
+    print(f"Weather lookup: {build_weather_lookup(weather_rows)}")
+    upcoming_call = find_upcoming_call(port_calls, selected_vessel["vessel_id"],reference_date)
+    print(f"Upcoming call: {upcoming_call}")
 if __name__ == "__main__":
     main()
