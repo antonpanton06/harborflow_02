@@ -6,7 +6,7 @@ Create reusable JSON and CSV loaders here. Do not hard-code sample records.
 from json import load, dump, JSONDecodeError
 from pathlib import Path
 import csv
-from text_tools import build_incident_index
+from text_tools import build_incident_index, normalize_words
 
 def load_json(path):
     """Load a JSON file from the given path."""
@@ -164,58 +164,112 @@ def write_csv(path, header, rows):
         writer.writeheader()       # column names, once
         writer.writerows(rows)     # every row in the list
 
+# ---------- Task 9: save, validate and reuse the incident index ----------
+
 def rebuild_incident_index():
-   
-    required_fields = ("incident_id", "call_id", "title", "report") # Define the fields every incident must contain.
+    """Read valid reports, save a fresh index, and load the saved result."""
+    # A missing folder is different from a folder with no incident files.
+    if not Path("dataset/incidents").is_dir():
+        raise FileNotFoundError("Incident directory not found.")
 
-    incidents, skipped_files = load_records("dataset/incidents", required_fields) # Reuse loader to read the valid incident records.
+    # Reuse the shared loader; _ means we do not need its skipped-file count.
+    required_fields = ("incident_id", "call_id", "title", "report")
+    incidents, _ = load_records("dataset/incidents", required_fields)
 
-    index, titles = build_incident_index(incidents)
+    # Required fields must contain text before we can normalize or index them.
+    valid_incidents = []
+    for incident in incidents:
+        if all(isinstance(incident[field], str) for field in required_fields):
+            valid_incidents.append(incident)
 
-    cache = {"index": index, "titles": titles} # Put both dictionaries inside one dictionary for the JSON file.
+    # Our text function returns two dictionaries; store both in one JSON object.
+    index, titles = build_incident_index(valid_incidents)
+    cache = {"index": index, "titles": titles}
 
-    # Open the cache file for writing, creating it if it does not exist.
+    # This is the only dataset file Task 9 writes. Source reports stay unchanged.
     with open("dataset/incident-index.json", "w", encoding="utf-8") as file:
-        # Save readable JSON and keep dictionary keys sorted.
-        dump(cache, file, indent=4, sort_keys=True)
+        # indent makes the JSON readable; sort_keys orders dictionary keys.
+        dump(cache, file, indent=4, sort_keys=True, ensure_ascii=False)
+        file.write("\n")
 
-    return cache
+    # Search uses data loaded from the saved JSON, including on the first run.
+    return load_json("dataset/incident-index.json")
+
+
+def valid_incident_cache(cache):
+    """Return True only when the saved data has the structure search needs."""
+    # Valid JSON can still contain the wrong data, such as a list or a number.
+    if not isinstance(cache, dict):
+        return False
+    if set(cache) != {"index", "titles"}:
+        return False
+    if not isinstance(cache["index"], dict):
+        return False
+    if not isinstance(cache["titles"], dict):
+        return False
+
+    # Shorter names make the following checks easier to read.
+    index = cache["index"]
+    titles = cache["titles"]
+
+    # Dictionaries loaded from JSON preserve the key order in the saved file.
+    if list(index) != sorted(index) or list(titles) != sorted(titles):
+        return False
+
+    # Every displayed title must be text.
+    for title in titles.values():
+        if not isinstance(title, str):
+            return False
+
+    # Each normalized word must point to a sorted list of distinct incident IDs.
+    for word, incident_ids in index.items():
+        if normalize_words(word) != [word]:
+            return False
+        if not isinstance(incident_ids, list):
+            return False
+
+        # Check types before using IDs as dictionary keys or sorting them.
+        for incident_id in incident_ids:
+            if not isinstance(incident_id, str):
+                return False
+            if incident_id not in titles:
+                return False
+
+        # set removes duplicates; sorted returns the required alphabetical order.
+        if incident_ids != sorted(set(incident_ids)):
+            return False
+
+    # All checks passed. The caller can safely use this cache.
+    return True
+
 
 def load_incident_index():
-
-    # Store the locations of the saved index and the source reports.
-    cache_path = Path("dataset/incident-index.json") 
+    """Reuse a valid fresh cache, or rebuild a missing, malformed or old one."""
+    # Relative paths work when the console is run from the project root.
+    cache_path = Path("dataset/incident-index.json")
     incident_directory = Path("dataset/incidents")
 
-    # Check that the source folder exists.
+    # Tell the menu about missing source data instead of saving an empty index.
     if not incident_directory.is_dir():
         raise FileNotFoundError("Incident directory not found.")
 
     try:
-        cache = load_json(cache_path) # Reuse existing function to read the saved JSON.
-
-    except (FileNotFoundError, JSONDecodeError):
-        # Rebuild if the cache is missing or contains broken JSON.
+        # Reuse the JSON loader rather than opening files in the menu.
+        cache = load_json(cache_path)
+    except (FileNotFoundError, JSONDecodeError, UnicodeDecodeError):
+        # Missing files, broken JSON and invalid text encoding are recoverable.
         return rebuild_incident_index()
 
-    # Check that the cache contains the expected dictionaries.
-    if not isinstance(cache, dict):
+    # A file can be readable JSON but still have an unusable structure.
+    if not valid_incident_cache(cache):
         return rebuild_incident_index()
 
-    if not isinstance(cache.get("index"), dict):
-        return rebuild_incident_index()
-
-    if not isinstance(cache.get("titles"), dict):
-        return rebuild_incident_index()
-
-    cache_time = cache_path.stat().st_mtime # Read the time when the cache file was last modified.
-
-    # Check each incident file's modification time.
+    # Nanoseconds retain enough precision to notice quick successive edits.
+    cache_time = cache_path.stat().st_mtime_ns
     for incident_path in incident_directory.glob("*.json"):
-        # A newer incident means the saved index may be outdated.
-        if incident_path.stat().st_mtime > cache_time:
+        # Only inspect file times here; fresh caches do not reread report text.
+        if incident_path.stat().st_mtime_ns > cache_time:
             return rebuild_incident_index()
 
-    # The cache passed our checks, so reuse it.
+    # No rebuild was needed, so return the saved index and title lookup.
     return cache
-

@@ -39,9 +39,11 @@ def normalize_words(text):
     return text.split()
 
 def build_incident_index(incidents):
-    
-    index = {} 
+    """Connect each report word to incident IDs and each ID to its title."""
+    # The index answers "Which incidents contain this word?"
+    index = {}
 
+    # The title lookup lets search display titles without reopening reports.
     titles = {}
 
     # Work through the incidents one at a time.
@@ -60,7 +62,9 @@ def build_incident_index(incidents):
             if word not in index:
                 index[word] = []
 
-            index[word].append(incident_id)  # Add this incident's ID to the word's list.
+            # Do not duplicate an ID, even if it occurs in more than one file.
+            if incident_id not in index[word]:
+                index[word].append(incident_id)
 
     sorted_index = {}
 
@@ -78,7 +82,8 @@ def build_incident_index(incidents):
     return sorted_index, sorted_titles
 
 def search_incident_index(index, query):
-
+    """Return positive (incident_id, score) matches in the required order."""
+    # Apply exactly the same normalization used when indexing report text.
     words = normalize_words(query)
 
     unique_words = set(words) # Remove repeated words so repetitions counts only once.
@@ -98,6 +103,8 @@ def search_incident_index(index, query):
                 # Add one point because this incident contains the word.
                 scores[incident_id] += 1
 
-    matches = sorted(scores.items(),key=lambda match: (-match[1], match[0])) # Sort by highest score first, then alphabetically by incident ID.
+    # items() gives (ID, score) pairs. A negative score sorts larger scores first.
+    # The ID is the second sorting rule, used when two scores are equal.
+    matches = sorted(scores.items(), key=lambda match: (-match[1], match[0]))
 
     return matches

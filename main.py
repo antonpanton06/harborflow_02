@@ -1,7 +1,7 @@
 """HarborFlow Assignment 2 starter entry point."""
 
 
-from data_access import load_vessels, load_csv, load_shipments, find_manifest, load_vessel_names, write_csv, load_records
+from data_access import load_vessels, load_csv, load_shipments, find_manifest, load_vessel_names, write_csv, load_records, load_incident_index
 from datetime import datetime
 from pathlib import Path
 import csv
@@ -9,7 +9,7 @@ from operations import (find_upcoming_call, classify_manifest, CATEGORY_ORDER,
                         build_customer_profile, upsert_profile, PROFILE_HEADER,
                         find_calls_by_month, build_weather_lookup, Get_reference_date,
                         find_upcoming_calls, parse_forecast, recommend)
-from text_tools import sanitize_report, longest_stable_sequence
+from text_tools import sanitize_report, longest_stable_sequence, search_incident_index
 
 CUSTOMER_PROFILES_PATH = "exports/customer-profiles.csv"
 
@@ -60,6 +60,9 @@ def main():
 
         elif option == 8:
             Assess_weather_risk_for_upcoming_calls()
+
+        elif option == 9:
+            search_incident_reports()
 
         elif option == 10:
             print("Console closed. HarborFlow operational data remains safe.") 
@@ -374,6 +377,35 @@ def Assess_weather_risk_for_upcoming_calls():
         # Print the weather data and recommendations for the upcoming call.
         print(f"Wind: {wind:.1f} km/h | Rain: {rain:.1f} mm | Waves: {waves:.1f} m")
         print("Recommendation: " + " ".join(recommend(wind, rain, waves)))
+
+# Option 9:
+def search_incident_reports():
+    """Ask for keywords and display matches from the saved incident index."""
+    # Keep the prompt exactly as specified in the assignment.
+    query = input("Search incident reports: ").strip()
+
+    try:
+        # File access and rebuilding belong to data_access.py.
+        cache = load_incident_index()
+    except OSError as error:
+        # Handle file failures here so the user can return to the main menu.
+        print(f"Incident search unavailable: {error}")
+        return
+    except UnicodeDecodeError:
+        # A source report with unreadable text cannot be indexed safely.
+        print("Incident search unavailable: a report is not valid UTF-8 text.")
+        return
+
+    # The search function only receives cached data; it never reads reports.
+    matches = search_incident_index(cache["index"], query)
+    print(f"Matches for '{query}':")
+
+    # Each result is an (ID, score) pair; titles also come from the cache.
+    # When there are no matches, the loop prints no result lines.
+    for incident_id, score in matches:
+        title = cache["titles"][incident_id]
+        print(f"- {incident_id} | score {score} | {title}")
+
 
 if __name__ == "__main__":
     main()
