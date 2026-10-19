@@ -271,5 +271,4 @@ def load_incident_index():
         if incident_path.stat().st_mtime_ns > cache_time:
             return rebuild_incident_index()
 
-    # No rebuild was needed, so return the saved index and title lookup.
     return cache
