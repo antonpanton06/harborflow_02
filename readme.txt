@@ -18,6 +18,7 @@ Name: Anton Johansson
 Contribution: Task 0 – Product Shell: Developed the main menu, program flow, input validation, and error handling.
 Task 1 – List Registered Vessels: Implemented JSON data loading, vessel validation, alphabetical sorting, and handling of invalid records.
 Task 2 – Inspect Vessel Manifest: Implemented vessel searches, upcoming port call identification, and retrieval of manifests and shipment data.
+Task 9 - Incident search: Added keyword search, ranked results, cache handling, and menu integration.
 Additional Contributions: Contributed to the overall program structure and integration of the assigned tasks into the main console.
 Testing - 2 rows in test-ledger for Tasks 1-2.
 
