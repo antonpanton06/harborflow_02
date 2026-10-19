@@ -277,8 +277,8 @@ def find_port_calls_by_month():
 #Option 6:
 def Sanitize_an_incident_report():
     directory = "dataset/incidents"
-    required_fields = ("incident_id", "call_id", "title", "report")
-    incidents,_ = load_records(directory, required_fields)
+    required_fields = ("incident_id", "call_id", "title", "report") # Define the fields every incident must contain.
+    incidents,_ = load_records(directory, required_fields) # Reuses the loader to read the valid incident records.
     incidents.sort(key=lambda incident: incident["title"].casefold())
 
     for count, incident in enumerate(incidents,start=1):                # List all possible incident reports

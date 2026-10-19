@@ -3,10 +3,10 @@ Files,Mixed valid and invalid vessels,List vessels,Valid vessels shown and malfo
 Relationships,Missing shipment,Inspect Nordic Relay from 2026-10-18,Missing record counted without crash,Matches expected,Anton,Pass
 Export,Update existing customer,Export same customer twice,One replaced row and no duplicate,Norra MedTech AB row replaced in place; file still has one row per customer,Vlad,Pass
 Month,Invalid source date,Choose month 10,Bad source row skipped and valid calls shown,HFL-BAD-9999 reported and skipped; 3 October calls listed in order,Vlad,Pass
-Regex,Several identifiers,Sanitize Reefer temperature deviation,All three identifier types replaced,,,Not run
-Sequence,Repeated event,Analyze HFL-GOT-2048,Longest first stable window reported,,,Not run
-Weather,Combined thresholds,Nordic Relay from 2026-10-18,Wind and wave recommendations combined,,,Not run
-Weather,Missing forecast,Baltic Pioneer from 2026-11-05,Forecast unavailable without stopping,,,Not run
+Regex,Several identifiers,Sanitize Reefer temperature deviation,All three identifier types replaced,All three identifier types replaced,Nils-Oskar,Pass
+Sequence,Repeated event,Analyze HFL-GOT-2048,Longest first stable window reported,Longest stable sequence length: 5; Sequence: WEIGH -> SCAN -> LOAD -> SEAL -> DEPART,Nils-Oskar,Pass
+Weather,Combined thresholds,Nordic Relay from 2026-10-18,Wind and wave recommendations combined,Recommendation: Suspend crane operations. Arrange tug assistance.,Nils-Oskar,Pass
+Weather,Missing forecast,Baltic Pioneer from 2026-11-05,Forecast unavailable without stopping,Forecast unavailable,Nils-Oskar,Pass
 Search,Two query words,Search reefer delay,Positive matches scored and sorted,,,Not run
 Cache,Corrupt cache,Replace cache with invalid JSON then search,Cache rebuilt,,,Not run
 Relationships,Known call ID,Option 3: HFL-AAR-2071,"SHP-1045 EXPEDITE, SHP-1046 CONTROLLED, SHP-1067 EXPEDITE; totals 1/0/2/0",Matches expected,Vlad,Pass

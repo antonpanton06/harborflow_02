@@ -21,8 +21,12 @@ Task 2 – Inspect Vessel Manifest: Implemented vessel searches, upcoming port c
 Additional Contributions: Contributed to the overall program structure and integration of the assigned tasks into the main console.
 Testing - 2 rows in test-ledger for Tasks 1-2.
 
-Name:
-Contribution:
+Name: Nils-Oskar Arnell
+Contribution: 
+  Task 6 (Sanitize incident report), regex patterns, function: sanitize_report 
+  Task 7 (Analyze longest stable event sequence), function: longest_stable_sequence
+  Task 8 (Asses weather risk), functions: find_upcoming_calls, parse_forecast, build_weather_lookup
+  Testing: 4 rows in test-ledger for tasks 6-8
 
 Name (if applicable):
 Contribution:

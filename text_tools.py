@@ -19,7 +19,6 @@ def longest_stable_sequence(event_code):
     start = 0
     last_seen = {}
     best_length = 0
-    print(event_code)
 	
     for end, event in enumerate(event_code):
         if event in last_seen and last_seen[event] >= start: 			# If event has been seen before and is inside the window, start again from after repeat event. ( window: [GATE_IN,<SCAN,SCAN>,LOAD,LOAD], first SCAN is "start")
