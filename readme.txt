@@ -62,4 +62,8 @@ How generated files are updated safely:
 
 Known limitations
 -----------------
-Write "None known" or describe each known limitation.
+ - The program must be started from the project folder (python main.py);
+  all dataset and export paths are relative to it.
+
+- Options 1, 2 and 8 print an extra line naming each malformed vessel
+  file in addition to the "Skipped vessel files" count.
