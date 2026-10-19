@@ -196,12 +196,10 @@ def identify_priority_cargo():
     shipments, _ = load_shipments("dataset/shipments")
     lines, totals = classify_manifest(manifest, shipments)
 
-    print()
     for shipment_id, category, reason in lines:
         print(f"{shipment_id} | {category} | {reason}")
     summary = ", ".join(f"{category}={totals[category]}" for category in CATEGORY_ORDER)
     print(f"Category totals: {summary}")
-    print()
 
 
 #Option 4:
