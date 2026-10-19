@@ -181,3 +181,41 @@ def rebuild_incident_index():
 
     return cache
 
+def load_incident_index():
+
+    # Store the locations of the saved index and the source reports.
+    cache_path = Path("dataset/incident-index.json") 
+    incident_directory = Path("dataset/incidents")
+
+    # Check that the source folder exists.
+    if not incident_directory.is_dir():
+        raise FileNotFoundError("Incident directory not found.")
+
+    try:
+        cache = load_json(cache_path) # Reuse existing function to read the saved JSON.
+
+    except (FileNotFoundError, JSONDecodeError):
+        # Rebuild if the cache is missing or contains broken JSON.
+        return rebuild_incident_index()
+
+    # Check that the cache contains the expected dictionaries.
+    if not isinstance(cache, dict):
+        return rebuild_incident_index()
+
+    if not isinstance(cache.get("index"), dict):
+        return rebuild_incident_index()
+
+    if not isinstance(cache.get("titles"), dict):
+        return rebuild_incident_index()
+
+    cache_time = cache_path.stat().st_mtime # Read the time when the cache file was last modified.
+
+    # Check each incident file's modification time.
+    for incident_path in incident_directory.glob("*.json"):
+        # A newer incident means the saved index may be outdated.
+        if incident_path.stat().st_mtime > cache_time:
+            return rebuild_incident_index()
+
+    # The cache passed our checks, so reuse it.
+    return cache
+
