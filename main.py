@@ -158,73 +158,91 @@ def inspect_vessel_manifest():
     print()
 
 
-#Option 3:
+#Option 3: (written by Vlad)
 def identify_priority_cargo():
-    """Classify every resolved shipment of one port call."""
-    call_id = input("Call ID: ").strip()
+    """Task 3 - classify every resolved shipment of one port call.
+
+    Flow: ask call ID -> check it exists in port_calls.csv -> find its
+    manifest -> load shipments -> classify (operations.py) -> print.
+    Unknown call or missing manifest returns to the menu (appendix rule).
+    """
+    call_id = input("Call ID: ").strip()     # strip() removes surrounding spaces
 
     try:
         port_calls = load_csv("dataset/port_calls.csv")
     except FileNotFoundError:
         print("Port calls file can't be found.")
-        return
+        return                               # return = back to the menu
     except csv.Error:
         print("Port calls file could not be read.")
         return
 
+    # Every known call ID in lowercase, so the user may type any case.
     known_call_ids = [call["call_id"].casefold() for call in port_calls]
     if call_id.casefold() not in known_call_ids:
         print("Port call not found.")
         return
 
+    # The call exists, but its manifest may be missing (e.g. HFL-BAD-9999).
     manifest = find_manifest("dataset/manifests", call_id)
     if manifest is None:
         print("Manifest unavailable.")
         return
 
-    shipments, _ = load_shipments("dataset/shipments")
-    lines, totals = classify_manifest(manifest, shipments)
+    shipments, _ = load_shipments("dataset/shipments")      # {shipment_id: shipment}
+    lines, totals = classify_manifest(manifest, shipments)  # business logic lives in operations.py
 
+    # Each line is a tuple, unpacked directly in the for statement.
     for shipment_id, category, reason in lines:
         print(f"{shipment_id} | {category} | {reason}")
+    # Build "CONTROLLED=1, COLD CHAIN=0, ..." in the fixed category order.
     summary = ", ".join(f"{category}={totals[category]}" for category in CATEGORY_ORDER)
     print(f"Category totals: {summary}")
 
 
-#Option 4:
+#Option 4: (written by Vlad)
 def export_customer_profile():
-    """Create or update one customer's row in exports/customer-profiles.csv."""
+    """Task 4 - create or update one customer's row in exports/customer-profiles.csv.
+
+    Flow: ask name -> build profile from shipments -> read existing export
+    -> replace or append the row -> rewrite the whole file.
+    """
     customer_name = input("Customer name: ").strip()
 
     shipments, _ = load_shipments("dataset/shipments")
     profile = build_customer_profile(customer_name, shipments)
     if profile is None:
-        print("Customer not found.") # The export file is not created or modified
+        # Return before touching the file: it is not created or modified.
+        print("Customer not found.")
         return
 
     try:
-        rows = load_csv(CUSTOMER_PROFILES_PATH) # Existing rows kept in memory
+        rows = load_csv(CUSTOMER_PROFILES_PATH)  # existing rows kept in memory
     except FileNotFoundError:
-        rows = [] # First run: the file is created below
+        rows = []       # first run: not an error, the file is created below
     except csv.Error:
         print("Customer profile export could not be read.")
-        return
+        return          # do not overwrite a file we could not read
 
-    rows = upsert_profile(rows, profile)
-    write_csv(CUSTOMER_PROFILES_PATH, PROFILE_HEADER, rows)
+    rows = upsert_profile(rows, profile)                     # replace or append
+    write_csv(CUSTOMER_PROFILES_PATH, PROFILE_HEADER, rows)  # rewrite with header once
     print(f"Customer profile updated: {CUSTOMER_PROFILES_PATH}")
 
 
-#Option 5:
+#Option 5: (written by Vlad)
 def find_port_calls_by_month():
-    """List all port calls in one month, sorted by date and vessel name."""
-    month = None
-    while month is None: # Repeat only the month prompt
+    """Task 5 - list all port calls in one month, sorted by date and vessel name.
+
+    Flow: ask month (repeat only this prompt on error) -> load port calls
+    and vessel names -> filter and sort (operations.py) -> print.
+    """
+    month = None                    # loop state: no valid month yet
+    while month is None:            # loop variable instead of while True (appendix rule)
         try:
-            value = int(input("Month (1-12): "))
+            value = int(input("Month (1-12): "))   # "abc" raises ValueError here
             if not 1 <= value <= 12:
-                raise ValueError
-            month = value
+                raise ValueError                   # treat 0 or 13 the same way as "abc"
+            month = value                          # valid: the loop condition becomes False
         except ValueError:
             print("Error - Enter a month from 1 to 12.")
 
@@ -237,9 +255,10 @@ def find_port_calls_by_month():
         print("Port calls file could not be read.")
         return
 
-    vessel_names = load_vessel_names("dataset/vessels")
+    vessel_names = load_vessel_names("dataset/vessels")     # {vessel_id: name}
     calls, problems = find_calls_by_month(port_calls, vessel_names, month)
 
+    # Report skipped rows first (e.g. the invalid date 2026-02-30).
     for problem in problems:
         print(problem)
 
@@ -247,9 +266,11 @@ def find_port_calls_by_month():
         print("No port calls found.")
         return
 
+    # Any date in that month gives its name: 10 -> "October".
     month_name = datetime(2000, month, 1).strftime("%B")
     print(f"Port calls in {month_name}:")
     for arrival_date, vessel_name, port_code, call_id in calls:
+        # %d %B %Y -> "18 October 2026"
         print(f"- {arrival_date.strftime('%d %B %Y')} | {vessel_name} | {port_code} | {call_id}")
 
 #Option 6:

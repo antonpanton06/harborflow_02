@@ -49,38 +49,63 @@ def load_vessels(directory):
     return vessels, skipped_files
 
 def load_records(directory, required_fields):
-    """Load every valid JSON record in a directory without printing.
+    """Load every valid JSON record in a directory without printing anything.
 
-    Returns (records, skipped_files). Malformed files and records missing a
-    required field are skipped so one bad file does not stop the others.
+    Shared loader used by Tasks 3, 4, 5 and 9 (written by Vlad).
+
+    Arguments:
+        directory       - folder to scan, e.g. "dataset/shipments"
+        required_fields - tuple of keys every record must contain
+
+    Returns a tuple (records, skipped_files):
+        records       - list of dictionaries that passed validation
+        skipped_files - how many files were rejected
+
+    A malformed file or a record missing a required field is skipped,
+    so one bad file never stops the other files from loading.
     """
-    records = []
-    skipped_files = 0
+    records = []        # valid records are collected here
+    skipped_files = 0   # counter for rejected files
 
+    # Path(directory).glob("*.json") finds every .json file in the folder.
+    # sorted() makes the order the same on every computer.
     for path in sorted(Path(directory).glob("*.json")):
         try:
-            record = load_json(path)
+            record = load_json(path)    # JSON text -> Python dict/list
         except JSONDecodeError:
+            # The file is not valid JSON (e.g. a missing closing brace).
             skipped_files += 1
-            continue
+            continue                    # skip this file, go to the next one
 
+        # The record must be a dictionary AND contain every required key.
+        # all(...) is True only if the check is True for every field.
         if isinstance(record, dict) and all(field in record for field in required_fields):
             records.append(record)
         else:
-            skipped_files += 1
+            skipped_files += 1          # wrong structure or missing field
 
     return records, skipped_files
 
 
 def load_shipments(directory):
-    """Load valid shipments as a dictionary keyed by shipment_id."""
+    """Load valid shipments as a dictionary keyed by shipment_id.
+
+    Example result: {"SHP-1042": {...shipment...}, "SHP-1043": {...}}
+
+    A dictionary lets other functions find a shipment directly by its ID
+    (shipments.get("SHP-1042")) instead of searching through a list.
+    Returns (shipments, skipped_files).
+    """
+    # Required fields come from dataset/DATA-DICTIONARY.md.
     required_fields = ("shipment_id", "customer", "destination", "weight_kg", "priority")
     records, skipped_files = load_records(directory, required_fields)
 
     shipments = {}
     for shipment in records:
-        if isinstance(shipment["weight_kg"], (int, float)): # weight_kg must be a JSON number
-            shipments[shipment["shipment_id"]] = shipment
+        # weight_kg must be a JSON number; a string or null would break
+        # the weight sums and the >= 5000 comparison later.
+        if isinstance(shipment["weight_kg"], (int, float)):
+            shipments[shipment["shipment_id"]] = shipment   # key = ID, value = whole record
         else:
             skipped_files += 1
 
@@ -90,31 +115,50 @@ def load_shipments(directory):
 def find_manifest(directory, call_id):
     """Return the manifest whose call_id field matches (case-insensitive), or None.
 
-    Filenames are not trusted as identifiers; the call_id field is compared.
+    Filenames are not trusted as identifiers: we compare the call_id field
+    stored inside each JSON file, so a renamed file still works.
     """
     required_fields = ("call_id", "vessel_id", "shipment_ids", "event_codes")
-    manifests, _ = load_records(directory, required_fields)
+    manifests, _ = load_records(directory, required_fields)   # _ = skipped count not needed
 
     for manifest in manifests:
+        # casefold() makes "hfl-aar-2071" equal to "HFL-AAR-2071".
+        # shipment_ids must be a list, otherwise looping over it would fail.
         if str(manifest["call_id"]).casefold() == call_id.casefold() and isinstance(manifest["shipment_ids"], list):
-            return manifest
-    return None
+            return manifest     # first match found: stop searching
+    return None                 # loop finished without a match
 
 
 def load_vessel_names(directory):
-    """Return a lookup {vessel_id: name} built from valid vessel files."""
+    """Return a lookup {vessel_id: name} built from valid vessel files.
+
+    Example: {"VSL-001": "Baltic Pioneer", "VSL-002": "Nordic Relay"}
+    Used by Task 5 to turn the vessel_id in port_calls.csv into a name.
+    The malformed vessel file is skipped by load_records.
+    """
     vessels, _ = load_records(directory, ("vessel_id", "name", "imo", "capacity_teu"))
+    # Dictionary comprehension: one key/value pair per vessel.
     return {vessel["vessel_id"]: vessel["name"] for vessel in vessels}
 
 
 def write_csv(path, header, rows):
     """Rewrite a whole CSV file from an in-memory list of dictionaries.
 
-    The header is written exactly once, also when the file is first created.
+    Used by Task 4. The header is written exactly once, also when the file
+    is created for the first time.
+
+    Arguments:
+        path   - output file, e.g. "exports/customer-profiles.csv"
+        header - list of column names in output order
+        rows   - list of dictionaries, one per CSV row
     """
     path = Path(path)
+    # Create the exports/ folder if it does not exist yet.
+    # exist_ok=True: no error if the folder is already there.
     path.parent.mkdir(parents=True, exist_ok=True)
+    # "w" overwrites the file from scratch. newline="" is required by the
+    # csv module to avoid empty lines between rows on Windows.
     with open(path, "w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=header)
-        writer.writeheader()
-        writer.writerows(rows)
+        writer = csv.DictWriter(file, fieldnames=header)   # writes dicts as CSV rows
+        writer.writeheader()       # column names, once
+        writer.writerows(rows)     # every row in the list
