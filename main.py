@@ -291,7 +291,7 @@ def Sanitize_an_incident_report():
     while incident_choice is None:
         try:
             choice = int(input(f"Incident number(1-{count}):"))
-            if choice < 0 or choice > count:
+            if choice <= 0 or choice > count:
                 raise ValueError
             incident_choice = incidents[choice - 1]
         except ValueError:
