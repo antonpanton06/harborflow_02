@@ -7,7 +7,7 @@ from pathlib import Path
 import csv
 from operations import (find_upcoming_call, classify_manifest, CATEGORY_ORDER,
                         build_customer_profile, upsert_profile, PROFILE_HEADER,
-                        find_calls_by_month, build_weather_lookup)
+                        find_calls_by_month, build_weather_lookup, Get_reference_date)
 from text_tools import sanitize_report, longest_stable_sequence
 
 CUSTOMER_PROFILES_PATH = "exports/customer-profiles.csv"
@@ -32,9 +32,10 @@ def main():
         try:
             option = int(input("Select service: "))
         except ValueError:
-            print("Error - Select a service from 1 to 10.")
-            continue
+            print("Error - Select a service from 1 to 10.") # So program doesn't crash when input ≠ an integer
+            continue 
 
+        # Menu selection each option calls the apropriate function:
         if option == 1:
             list_registered_vessels()
 
@@ -60,63 +61,51 @@ def main():
             Assess_weather_risk_for_upcoming_calls()
 
         elif option == 10:
-            print("Console closed. HarborFlow operational data remains safe.")
-            run =False
+            print("Console closed. HarborFlow operational data remains safe.") 
+            run =False # Makes while loop = False and stops loop.
 
         else:
-            print("Error - Select a service from 1 to 10.")
+            print("Error - Select a service from 1 to 10.") # If input = an integer which is not 1-10.
 
 
 #Option 1:
 def list_registered_vessels():
     """List all registered vessels."""
     try:
-        vessels, skipped_files = load_vessels("dataset/vessels")
+        vessels, skipped_files = load_vessels("dataset/vessels") # Fetches the data
         
         print("\nRegistered HarborFlow vessels:")
         for vessel in vessels:
-            print(f"- {vessel['name']} | IMO {vessel['imo']} | {vessel['capacity_teu']:,} TEU")
-        print(f"Skipped vessel files: {skipped_files}\n")
+            print(f"- {vessel['name']} | IMO {vessel['imo']} | {vessel['capacity_teu']:,} TEU") # For each vessel found whitin the data
+        print(f"Skipped vessel files: {skipped_files}\n") # Any malformed files gets recognised here
 
-    except FileNotFoundError as error:
+    except FileNotFoundError as error:      # If a malformed file is found then the program will list that specific file
         print(error)
         return
 
 #Option 2:
 def inspect_vessel_manifest():
-    print()
     """Let the user inspect a vessel's manifest."""
+    print() # Just for looks...
 
-    vessels, skipped_files = load_vessels("dataset/vessels")
+    vessels, skipped_files = load_vessels("dataset/vessels") # Fetches the data
 
     for number, vessel in enumerate(vessels, start=1): # List of vessels for selection
         print(f"{number}. {vessel['name']}")
     print()
 
-    vessel_name = input("Vessel name: ").strip().casefold()
+    vessel_name = input("Vessel name: ").strip().casefold() # You select the name of the vessel listed
     
-    selected_vessel = None
+    selected_vessel = None # Start value
     for vessel in vessels:
         if vessel["name"].casefold() == vessel_name:
-            selected_vessel = vessel
+            selected_vessel = vessel # A for lopp that looks through the vessels to see if 
 
     if selected_vessel == None:
         print(f"Vessel not found.") # If there is no vessel that match to be found.
         return
 
-    reference_date = None
-    while reference_date is None:
-        date_text = input(("Reference date (YYYY-MM-DD): "))
-
-        try:
-            parsed_date = datetime.strptime(date_text, "%Y-%m-%d").date()
-
-            if parsed_date.isoformat() != date_text:
-                raise ValueError
-
-            reference_date = parsed_date
-        except ValueError:
-            print("Error - Date must use YYYY-MM-DD.") # Prints if a ValueError uccurs.
+    reference_date = Get_reference_date()
 
     try:
         port_calls = load_csv("dataset/port_calls.csv") # Calls for the function with "dataset/port_calls.csv" as the path.
