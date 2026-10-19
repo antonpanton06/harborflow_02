@@ -153,13 +153,58 @@ def find_calls_by_month(port_calls, vessel_names, month):
     calls.sort(key=lambda call: (call[0], call[1].casefold()))
     return calls, problems
 
+
+def find_upcoming_calls(port_calls, vessel_id, reference_date):
+    """Return (calls, problems): all upcoming calls of a vessel, sorted.
+
+    calls are (arrival_date, call) tuples sorted by date, then call_id.
+    """
+    calls = []          # Qalifying calls of the vessel
+    problems = []       # Problems encountered while processing the calls. to be printed.
+
+    for call in port_calls:
+        if call["vessel_id"] != vessel_id: # ignore calls of other vessels
+            continue
+        try: # Check if the arrival date is valid and parse it to a date object. If not valid, add to problems list and continue to next call.
+            arrival_date = parse_iso_date(call["arrival_date"]) 
+        except ValueError:
+            problems.append(f"Skipped {call['call_id']}: invalid arrival date.")
+            continue
+        if arrival_date >= reference_date: # If the arrival date is greater than or equal to the reference date, add the call to the calls list.
+            calls.append((arrival_date, call))
+
+    calls.sort(key=lambda item: (item[0], item[1]["call_id"])) # Sort the calls list by arrival date and then by call_id.
+    return calls, problems
+
+def parse_forecast(row):
+    """Return (wind, rain, waves) as floats. Raises ValueError if malformed."""
+    try:
+        return (float(row["wind_kmh"]),
+                float(row["precipitation_mm"]),
+                float(row["wave_height_m"]))
+    except (ValueError, TypeError, KeyError):
+        raise ValueError("malformed forecast row")
+
 def build_weather_lookup(weather_rows):
     """Return {(port_code, date_text): row}. The first row wins on duplicates."""
     lookup = {}
-    for row in weather_rows:
+    for row in weather_rows: # Iterate through the weather rows and build a lookup dictionary with the port code and date as the key. If there are duplicate keys, the first row wins.
         key = (row["port_code"].strip(), row["date"].strip())
-        lookup.setdefault(key, row)
+        lookup.setdefault(key, row) # Add the row to the lookup dictionary if the key does not already exist. If the key already exists, do nothing (the first row wins).
     return lookup
+
+def recommend(wind, rain, waves):
+    """Return every recommendation whose condition is true, in table order."""
+    recommendations = []
+    if wind >= 45:
+        recommendations.append("Suspend crane operations.")
+    if waves >= 2.5:
+        recommendations.append("Arrange tug assistance.")
+    if rain >= 8 and wind < 45:
+        recommendations.append("Prepare covered handling.")
+    if not recommendations:
+        recommendations.append("Normal operating plan.")
+    return recommendations
 
 def Get_reference_date():
     """Input reference date"""

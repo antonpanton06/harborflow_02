@@ -7,7 +7,8 @@ from pathlib import Path
 import csv
 from operations import (find_upcoming_call, classify_manifest, CATEGORY_ORDER,
                         build_customer_profile, upsert_profile, PROFILE_HEADER,
-                        find_calls_by_month, build_weather_lookup)
+                        find_calls_by_month, build_weather_lookup, Get_reference_date,
+                        find_upcoming_calls, parse_forecast, recommend)
 from text_tools import sanitize_report, longest_stable_sequence
 
 CUSTOMER_PROFILES_PATH = "exports/customer-profiles.csv"
@@ -307,27 +308,62 @@ def Analyze_the_longest_stable_event_sequence():
     print(f"Sequence: {' -> '.join(sequence)}")                                                 # Longest sequence 
 
 def Assess_weather_risk_for_upcoming_calls():
-    port_calls = load_csv("dataset/port_calls.csv")
-    weather_rows = load_csv("dataset/weather.csv")
-    vessels,_ = load_vessels("dataset/vessels")
-
-    print() # Console spacing
-    vessel_name = input("Vessel name: ").strip().casefold()    
+    """Show weather recommendations for a vessel's upcoming port calls."""
+    try:
+        vessels, _ = load_vessels("dataset/vessels")
+    except FileNotFoundError as error:
+        print(error)
+        return
+    # List vessels for selection
+    vessel_name = input("Vessel name: ").strip().casefold()
     selected_vessel = None
     for vessel in vessels:
         if vessel["name"].casefold() == vessel_name:
             selected_vessel = vessel
-
-    if selected_vessel == None:
-        print(f"Vessel not found.") # If there is no vessel that match to be found.
+            break
+    if selected_vessel is None:
+        print("Vessel not found.")
         return
     
-    
-    print() # Console spacing
+    reference_date = None
+    while reference_date is None: 
+        reference_date = Get_reference_date() # Get the reference date from the user input and validate it.
+    try:
+        port_calls = load_csv("dataset/port_calls.csv")
+        weather_rows = load_csv("dataset/weather.csv")
+    except FileNotFoundError:
+        print("Port calls or weather file can't be found.")
+        return
+    except csv.Error:
+        print("Port calls or weather file could not be read.")
+        return
 
-    print(selected_vessel)
-    print(f"Weather lookup: {build_weather_lookup(weather_rows)}")
-    upcoming_call = find_upcoming_call(port_calls, selected_vessel["vessel_id"],reference_date)
-    print(f"Upcoming call: {upcoming_call}")
+    calls, problems = find_upcoming_calls(port_calls, selected_vessel["vessel_id"], reference_date) # Find the upcoming calls for the selected vessel and the reference date, returning a list of calls and any problems encountered.
+    # Print any problems encountered while processing the calls.
+    for problem in problems:
+        print(problem)
+    if not calls: # If there are no upcoming calls for the selected vessel, print a message and return.
+        print("No upcoming port calls found.")
+        return
+
+    weather = build_weather_lookup(weather_rows) # Build a lookup dictionary for the weather data, using the port code and date as the key.
+
+    for arrival_date, call in calls: # Iterate through the upcoming calls for the selected vessel, printing the weather recommendations for each call.
+        print(f"\n{selected_vessel['name']} | {call['port_code']} | {arrival_date.strftime('%d %B %Y')}")
+
+        row = weather.get((call["port_code"].strip(), arrival_date.isoformat())) # Get the weather data for the port code and arrival date from the weather lookup dictionary. If there is no weather data for the port code and arrival date, print a message and continue to the next call.
+        if row is None:
+            print("Forecast unavailable")
+            continue
+
+        try: # Parse the weather data for wind, rain, and waves from the weather row. If the weather row is malformed, print a message and continue to the next call.
+            wind, rain, waves = parse_forecast(row)
+        except ValueError:
+            print(f"Skipped forecast for {call['call_id']}: malformed forecast row.")
+            continue
+        # Print the weather data and recommendations for the upcoming call.
+        print(f"Wind: {wind:.1f} km/h | Rain: {rain:.1f} mm | Waves: {waves:.1f} m")
+        print("Recommendation: " + " ".join(recommend(wind, rain, waves)))
+
 if __name__ == "__main__":
     main()
