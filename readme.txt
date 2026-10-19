@@ -7,11 +7,19 @@ Python version tested:
 
 Team members and concrete contributions
 ---------------------------------------
-Name:
-Contribution:
+Name: Vladyslav Pryshchep
+Contribution: - Implementation: Task 3 (priority cargo), Task 4 (customer profile CSV
+  export), Task 5 (port calls by month). Menu options 3-5 in main.py; related
+  functions in operations.py and data_access.py.
+- Testing: 12 test-ledger rows for Tasks 3-5.
+- Integration: added Tasks 3-5 to the shared main.py menu.
 
-Name:
-Contribution:
+Name: Anton Johansson
+Contribution: Task 0 – Product Shell: Developed the main menu, program flow, input validation, and error handling.
+Task 1 – List Registered Vessels: Implemented JSON data loading, vessel validation, alphabetical sorting, and handling of invalid records.
+Task 2 – Inspect Vessel Manifest: Implemented vessel searches, upcoming port call identification, and retrieval of manifests and shipment data.
+Additional Contributions: Contributed to the overall program structure and integration of the assigned tasks into the main console.
+Testing - 2 rows in test-ledger for Tasks 1-2.
 
 Name:
 Contribution:

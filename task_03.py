@@ -7,4 +7,8 @@ def id_priority_cargo(call_id = str()):
 
 if __name__ == "__main__":
     test_call_id = "HFL-AAR-2071"
-    id_priority_cargo(test_call_id)
+    # id_priority_cargo(test_call_id)
+    dict = {}
+
+    dict["Fireifwork"] = 1
+    print(dict)
