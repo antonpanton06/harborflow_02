@@ -33,10 +33,10 @@ Contribution:
 
 Architecture
 ------------
-main.py responsibilities:
-data_access.py responsibilities:
-operations.py responsibilities:
-text_tools.py responsibilities:
+main.py responsibilities: Runs the menu, collects input, calls the other modules, displays results, and saves sanitized reports.
+data_access.py responsibilities: Loads and validates JSON/CSV data, finds records, writes CSV exports, and manages the incident-index cache.
+operations.py responsibilities: Handles cargo classification, customer profiles, port-call filtering, date input and validation, and weather recommendations.
+text_tools.py responsibilities: Sanitizes reports, finds the longest stable event sequence, normalizes words, and builds and searches the incident index.
 
 File and error-handling design
 ------------------------------
