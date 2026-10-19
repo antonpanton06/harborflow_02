@@ -3,9 +3,10 @@
 Create reusable JSON and CSV loaders here. Do not hard-code sample records.
 """
 
-from json import load, JSONDecodeError
+from json import load, dump, JSONDecodeError
 from pathlib import Path
 import csv
+from text_tools import build_incident_index
 
 def load_json(path):
     """Load a JSON file from the given path."""
@@ -162,3 +163,21 @@ def write_csv(path, header, rows):
         writer = csv.DictWriter(file, fieldnames=header)   # writes dicts as CSV rows
         writer.writeheader()       # column names, once
         writer.writerows(rows)     # every row in the list
+
+def rebuild_incident_index():
+   
+    required_fields = ("incident_id", "call_id", "title", "report") # Define the fields every incident must contain.
+
+    incidents, skipped_files = load_records("dataset/incidents", required_fields) # Reuse loader to read the valid incident records.
+
+    index, titles = build_incident_index(incidents)
+
+    cache = {"index": index, "titles": titles} # Put both dictionaries inside one dictionary for the JSON file.
+
+    # Open the cache file for writing, creating it if it does not exist.
+    with open("dataset/incident-index.json", "w", encoding="utf-8") as file:
+        # Save readable JSON and keep dictionary keys sorted.
+        dump(cache, file, indent=4, sort_keys=True)
+
+    return cache
+
