@@ -295,7 +295,7 @@ def Sanitize_an_incident_report():
                 raise ValueError
             incident_choice = incidents[choice - 1]
         except ValueError:
-            print(f"Error - Select a listed incident")
+            print(f"Error - Select a listed incident.")
     
     sanitized_text = sanitize_report(incident_choice["report"])
     if sanitized_text == incident_choice["report"]:
@@ -306,6 +306,7 @@ def Sanitize_an_incident_report():
     output_path.parent.mkdir(parents=True, exist_ok=True)                                       # Makes the parent folders if they do not exist
     with open(output_path, "w", encoding="utf-8", newline="") as file:                          # writes to the file
         file.write(sanitized_text)
+    print("Incident sanitized:", sanitized_text)
 
 #Option 7:
 def Analyze_the_longest_stable_event_sequence():
