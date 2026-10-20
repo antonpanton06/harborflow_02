@@ -91,8 +91,11 @@ def list_registered_vessels():
 def inspect_vessel_manifest():
     """Let the user inspect a vessel's manifest."""
     print() # Just for looks...
-
-    vessels, skipped_files = load_vessels("dataset/vessels") # Fetches the data
+    try:
+        vessels, skipped_files = load_vessels("dataset/vessels") # Fetches the data
+    except FileNotFoundError as error:
+        print(error)
+        return
 
     for number, vessel in enumerate(vessels, start=1): # List of vessels for selection
         print(f"{number}. {vessel['name']}")
