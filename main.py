@@ -290,7 +290,9 @@ def Sanitize_an_incident_report():
     required_fields = ("incident_id", "call_id", "title", "report") # Define the fields every incident must contain.
     incidents,_ = load_records(directory, required_fields) # Reuses the loader to read the valid incident records.
     incidents.sort(key=lambda incident: incident["title"].casefold())
-
+    if not incidents:
+        print("No incident reports available.")
+        return
     for count, incident in enumerate(incidents,start=1):                # List all possible incident reports
             print(f"{count}. {incident["title"]}")
     
@@ -328,6 +330,7 @@ def Analyze_the_longest_stable_event_sequence():
     print(f"Longest stable sequence length: {length}")                                          # Length of longest sequence
     print(f"Sequence: {' -> '.join(sequence)}")                                                 # Longest sequence 
 
+#Option 8:
 def Assess_weather_risk_for_upcoming_calls():
     """Show weather recommendations for a vessel's upcoming port calls."""
     try:
@@ -394,14 +397,13 @@ def Assess_weather_risk_for_upcoming_calls():
 # Option 9:
 def search_incident_reports():
     """Ask for keywords and display matches from the saved incident index."""
-    # Keep the prompt exactly as specified in the assignment.
-    query = input("Search incident reports: ").strip()
+    
+    query = input("Search incident reports: ").strip() # What you want to search for: e.g "reefer delay"
 
     try:
-        # File access and rebuilding belong to data_access.py.
-        cache = load_incident_index()
+        cache = load_incident_index() # Fetch data
+     # Handle file failures 
     except OSError as error:
-        # Handle file failures here so the user can return to the main menu.
         print(f"Incident search unavailable: {error}")
         return
     except UnicodeDecodeError:
