@@ -254,18 +254,3 @@ def recommend(wind, rain, waves):
     if not recommendations:
         recommendations.append("Normal operating plan.")
     return recommendations
-
-def Get_reference_date():
-    """Input reference date"""
-    reference_date = None
-    while reference_date is None:
-        date_text = input(("Reference date (YYYY-MM-DD): "))
-        try:
-            parsed_date = datetime.strptime(date_text, "%Y-%m-%d").date()
-
-            if parsed_date.isoformat() != date_text: # strptime accepts yyyy-m-d which we do not want so if input is not in the format yyyy-mm-dd reject reference date
-                raise ValueError
-            reference_date = parsed_date
-        except ValueError:
-            print("Error - Date must use YYYY-MM-DD.") # Prints if a ValueError uccurs.
-    return reference_date

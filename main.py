@@ -7,7 +7,7 @@ from pathlib import Path
 import csv
 from operations import (find_upcoming_call, classify_manifest, CATEGORY_ORDER,
                         build_customer_profile, upsert_profile, PROFILE_HEADER,
-                        find_calls_by_month, build_weather_lookup, Get_reference_date,
+                        find_calls_by_month, build_weather_lookup, parse_iso_date,
                         find_upcoming_calls, parse_forecast, recommend)
 from text_tools import sanitize_report, longest_stable_sequence, search_incident_index
 
@@ -109,7 +109,14 @@ def inspect_vessel_manifest():
         print(f"Vessel not found.") # If there is no vessel that match to be found.
         return
 
-    reference_date = Get_reference_date()
+    reference_date = None
+    while reference_date is None:
+        date_text = input(("Reference date (YYYY-MM-DD): "))
+        try:
+            parsed_date = parse_iso_date(date_text)
+            reference_date = parsed_date
+        except ValueError as error:
+            print(error)
 
     try:
         port_calls = load_csv("dataset/port_calls.csv") # Calls for the function with "dataset/port_calls.csv" as the path.
@@ -340,8 +347,13 @@ def Assess_weather_risk_for_upcoming_calls():
         return
     
     reference_date = None
-    while reference_date is None: 
-        reference_date = Get_reference_date() # Get the reference date from the user input and validate it.
+    while reference_date is None:
+        date_text = input(("Reference date (YYYY-MM-DD): "))
+        try:
+            parsed_date = parse_iso_date(date_text)
+            reference_date = parsed_date
+        except ValueError as error:
+            print(error)
     try:
         port_calls = load_csv("dataset/port_calls.csv")
         weather_rows = load_csv("dataset/weather.csv")
