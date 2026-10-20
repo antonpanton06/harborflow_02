@@ -118,8 +118,8 @@ def inspect_vessel_manifest():
         try:
             parsed_date = parse_iso_date(date_text)
             reference_date = parsed_date
-        except ValueError as error:
-            print(error)
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD")
 
     try:
         port_calls = load_csv("dataset/port_calls.csv") # Calls for the function with "dataset/port_calls.csv" as the path.
@@ -358,8 +358,8 @@ def Assess_weather_risk_for_upcoming_calls():
         try:
             parsed_date = parse_iso_date(date_text)
             reference_date = parsed_date
-        except ValueError as error:
-            print(error)
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD")
     try:
         port_calls = load_csv("dataset/port_calls.csv")
         weather_rows = load_csv("dataset/weather.csv")
