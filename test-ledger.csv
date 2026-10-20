@@ -7,8 +7,8 @@ Regex,Several identifiers,Sanitize Reefer temperature deviation,All three identi
 Sequence,Repeated event,Analyze HFL-GOT-2048,Longest first stable window reported,Longest stable sequence length: 5; Sequence: WEIGH -> SCAN -> LOAD -> SEAL -> DEPART,Nils-Oskar,Pass
 Weather,Combined thresholds,Nordic Relay from 2026-10-18,Wind and wave recommendations combined,Recommendation: Suspend crane operations. Arrange tug assistance.,Nils-Oskar,Pass
 Weather,Missing forecast,Baltic Pioneer from 2026-11-05,Forecast unavailable without stopping,Forecast unavailable,Nils-Oskar,Pass
-Search,Two query words,Search reefer delay,Positive matches scored and sorted,,,Not run
-Cache,Corrupt cache,Replace cache with invalid JSON then search,Cache rebuilt,,,Not run
+Search,Two query words,Search reefer delay,Positive matches scored and sorted,3 found; all positive,Anton,Pass
+Cache,Corrupt cache,Replace cache with invalid JSON then search,Cache rebuilt,Cache rebuilt,Anton,pass
 Relationships,Known call ID,Option 3: HFL-AAR-2071,"SHP-1045 EXPEDITE, SHP-1046 CONTROLLED, SHP-1067 EXPEDITE; totals 1/0/2/0",Matches expected,Vlad,Pass
 Relationships,Missing linked shipment,Option 3: HFL-GOT-2048,SHP-1042 COLD CHAIN; missing SHP-1051 not classified; no crash,Matches expected,Vlad,Pass
 Export,First write,Option 4: Norra MedTech AB with no export file,"File created with header once and row Norra MedTech AB,8,6420.50,3,CPH|GOT|OSL",Matches expected,Vlad,Pass
